@@ -139,6 +139,7 @@ for ndc in full_row_list[1:]:
 	if rxcui_results[1] == "Unknown Drug":
 		fail +=1
 
+## ***** PRACTICE GIT STUFF *****
 match_rate = float(((count-fail)-1)/(count-1))
 print("\n\nLength of updated spreadsheet: ", (len(updated_spreadsheet)-1))
 print("NDC numbers without drug information found: ", fail)
