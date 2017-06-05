@@ -50,9 +50,10 @@ for key, value in rxcui_dictionary.items():
 	while answer == 0:
 		answer = input("Do you wish to keep this drug in your target list? Y or N?   ")
 		if answer.lower() == "y":
-			pass
+			break
 		elif answer.lower() == "n":
 			rxcui_dictionary[key] = 0
+			break
 		else:
 			print("\n You didn't select Y or N!\n")
 			continue

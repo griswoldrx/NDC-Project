@@ -120,10 +120,11 @@ for ndc in full_row_list[1:]:
 	print("\nTest NDC #", count, test_ndc)
 
 	if len(test_ndc) <11 and len(test_ndc) >6:
+		test_ndc = test_ndc.rjust(11,'0')
 		print("padding NDC to 11 digits")
-		padding = "0" * (11-len(test_ndc))
-		test_ndc = padding + str(test_ndc)
-
+	# 	padding = "0" * (11-len(test_ndc))
+	# 	test_ndc = padding + str(test_ndc)
+	print("\nTest NDC #", count, test_ndc)
 	result = initial_ndc_query(test_ndc, cache_diction= saved_cache, cache_fname= cache_fname)
 	search_results = json.loads(result)
 	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction= rxcui_saved_cache, rxcui_cache_fname= rxcui_cache_fname)
@@ -139,7 +140,6 @@ for ndc in full_row_list[1:]:
 	if rxcui_results[1] == "Unknown Drug":
 		fail +=1
 
-## ***** PRACTICE GIT STUFF *****
 match_rate = float(((count-fail)-1)/(count-1))
 print("\n\nLength of updated spreadsheet: ", (len(updated_spreadsheet)-1))
 print("NDC numbers without drug information found: ", fail)
