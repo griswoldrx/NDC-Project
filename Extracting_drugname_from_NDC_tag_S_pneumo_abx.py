@@ -122,7 +122,7 @@ def get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction, rxcui_cache_fn
 		rxcui = find_active_rxcui(rxcui_list)
 		if rxcui in rxcui_cache_diction:
 			print("*** RETRIEVING Rxcui from cached file! ***")
-			return (rxcui_cache_diction[rxcui]['rxcui'], rxcui_cache_diction[rxcui]['drug_name'], status)
+			return (rxcui, rxcui_cache_diction[rxcui], status)
 		p_search_url = 'https://rxnav.nlm.nih.gov/REST/rxcui/' + str(rxcui)+ '/properties.json'
 		p_properties = requests.get(p_search_url)
 		RXCUI_properties = json.loads(p_properties.text)
@@ -131,9 +131,7 @@ def get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction, rxcui_cache_fn
 		except:
 			drug_name = "Unknown Drug"
 		print("*** ADDING Rxcui to cached file. ***")
-		rxcui_cache_diction[rxcui] = {}
-		rxcui_cache_diction[rxcui]['rxcui'] = rxcui
-		rxcui_cache_diction[rxcui]['drug_name'] = drug_name
+		rxcui_cache_diction[rxcui] = drug_name
 		fobj = open(rxcui_cache_fname, "wb")
 		pickle.dump(rxcui_cache_diction, fobj)
 		fobj.close()
@@ -197,13 +195,10 @@ count = 1
 fail= 0
 for ndc in full_row_list[1:]:
 	test_ndc = ndc[NDC]
-	print("\nTest NDC #", count, test_ndc)
-
 	if len(test_ndc) <11 and len(test_ndc) >6:
-		print("padding NDC to 11 digits")
-		padding = "0" * (11-len(test_ndc))
-		test_ndc = padding + str(test_ndc)
+		test_ndc = test_ndc.rjust(11,'0')
 
+	print("\nTest NDC #", count, test_ndc)
 	result = initial_ndc_query(test_ndc, cache_diction= saved_cache, cache_fname= cache_fname)
 	search_results = json.loads(result)
 	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction= rxcui_saved_cache, rxcui_cache_fname= rxcui_cache_fname)
