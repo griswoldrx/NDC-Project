@@ -66,6 +66,10 @@ updated_spreadsheet = []
 ## Set up cache file names
 cache_fname = "cached_NDC_results"
 rxcui_cache_fname = "cached_RXCUI_results"
+unkown_data_file = "data.txt"
+
+with open(unkown_data_file) as json_file:
+	data = json.load(json_file)
 
 #Prompt user for filename
 fname = input("Enter the CSV file you want to perform NDC lookup on: ")
@@ -107,9 +111,16 @@ for ndc in full_row_list[1:]:
 		test_ndc = test_ndc.rjust(11,'0')
 
 	print("\nTest NDC #", count, test_ndc)
-	result = initial_ndc_query(test_ndc, cache_fname= cache_fname)
-	search_results = json.loads(result)
-	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fname= rxcui_cache_fname)
+	if test_ndc in data:
+		print("Retrieving Manual NDC results")
+		rxcui_results = []
+		rxcui_results.append("Not found in RxNorm")
+		rxcui_results.append(data[test_ndc])
+		rxcui_results.append("No")
+	else:
+		result = initial_ndc_query(test_ndc, cache_fname= cache_fname)
+		search_results = json.loads(result)
+		rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fname= rxcui_cache_fname)
 
 	ndc.append(rxcui_results[0])
 	ndc.append(rxcui_results[1])
