@@ -16,46 +16,42 @@ def find_active_rxcui(ndc_history_list):
 	potential_rxcui_list = []
 	for each in ndc_history_list:
 		potential_rxcui_list.append(each['activeRxcui'])
-	l = [str(x) for x in potential_rxcui_list if x != '']
+	l = [x for x in potential_rxcui_list if x != '']
 	try:
 		return l[0]
 	except:
 		return "No Active Rxcui for this NDC"
 
-def initial_ndc_query(test_ndc, cache_fname):
-	cache_fobj = shelve.open(cache_fname)
+def initial_ndc_query(test_ndc, cache_fobj):
 	n_search_url = 'https://rxnav.nlm.nih.gov/REST/ndcstatus.json?ndc=' + test_ndc
 	if test_ndc in cache_fobj:
 		print("*** RETRIEVING data from the cached file for RXCUI ***")
 		result = cache_fobj[test_ndc]
-		cache_fobj.close()
 		return result
 	else:
 		n_status = requests.get(n_search_url)
 		print("*** ADDING saved data to cache file for RXCUI ***")
 		cache_fobj[test_ndc] = n_status.text
-		cache_fobj.close()
 		return n_status.text
 
-def get_RXCUI_info(search_results, test_ndc, rxcui_cache_fname):
-	rxcui_cache_fobj = shelve.open(rxcui_cache_fname)
+def get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj):
 	status = search_results['ndcStatus']['status']
 	if status == 'Alien' or status == 'Unknown':
 		if test_ndc in data:
 			print("Retrieving Manual NDC results")
-			rxcui = "Data not found in RxNorm, manual linkage"
+			rxcui = str(test_ndc)
 			drug_name = data[test_ndc]
 		else:
 			print("*** Cannot locate Drug Name for this NDC. ***")
-			rxcui = (test_ndc)
-			drug_name = "Unknown Drug"		
+			rxcui = str(test_ndc)
+			drug_name = "Unknown Drug"
+		return (rxcui, drug_name, status)		
 	else:
 		rxcui_list= search_results['ndcStatus']['ndcHistory']
 		rxcui = find_active_rxcui(rxcui_list)
 		if rxcui in rxcui_cache_fobj:
 			print("*** RETRIEVING Rxcui from cached file! ***")
 			drug_name = rxcui_cache_fobj[rxcui]
-			rxcui_cache_fobj.close()
 			return (rxcui, drug_name, status)
 		p_search_url = 'https://rxnav.nlm.nih.gov/REST/rxcui/' + str(rxcui)+ '/properties.json'
 		p_properties = requests.get(p_search_url)
@@ -66,7 +62,6 @@ def get_RXCUI_info(search_results, test_ndc, rxcui_cache_fname):
 			drug_name = "Unknown Drug"
 		print("*** ADDING Rxcui to cached file. ***")
 		rxcui_cache_fobj[rxcui] = drug_name
-		rxcui_cache_fobj.close()
 	return (rxcui, drug_name, status)
 
 ## set up empty lists
@@ -75,7 +70,11 @@ updated_spreadsheet = []
 
 ## Set up cache file names
 cache_fname = "cached_NDC_results"
+cache_fobj = shelve.open(cache_fname)
+
 rxcui_cache_fname = "cached_RXCUI_results"
+rxcui_cache_fobj = shelve.open(rxcui_cache_fname)
+
 unkown_data_file = "data.txt"
 
 with open(unkown_data_file) as json_file:
@@ -121,15 +120,27 @@ for ndc in full_row_list[1:]:
 		test_ndc = test_ndc.rjust(11,'0')
 
 	print("\nTest NDC #", count, test_ndc)
-	result = initial_ndc_query(test_ndc, cache_fname= cache_fname)
+	result = initial_ndc_query(test_ndc, cache_fobj= cache_fobj)
 	search_results = json.loads(result)
-	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fname= rxcui_cache_fname)
+	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj= rxcui_cache_fobj)
+	
+## getting rxcui and ndc variable into type integer for list comparison
+	try:
+		rxcui = int(rxcui_results[0])
+	except:
+		rxcui = 999999
+	try:
+		new_ndc = int(test_ndc)
+	except:
+		new_ndc = 111111
 
 ## Adding results to the current row data
 	ndc.append(rxcui_results[0])
 	ndc.append(rxcui_results[1])
-	if rxcui_results[0] in hydroxyurea_rxcui_list or test_ndc in NDC_for_hydroxyurea_powder:
+	if rxcui in hydroxyurea_rxcui_list:
 		ndc.append("Yes")
+	if new_ndc in NDC_for_hydroxyurea_powder:
+		ndc.append("Yes, bulk powder")
 	else:
 		ndc.append("No")
 ## Adding row results to final spreadsheet
@@ -137,6 +148,10 @@ for ndc in full_row_list[1:]:
 	count +=1
 	if rxcui_results[1] == "Unknown Drug":
 		fail +=1
+
+
+cache_fobj.close()
+rxcui_cache_fobj.close()
 
 match_rate = float(((count-fail)-1)/(count-1))
 print("\n\nLength of updated spreadsheet: ", (len(updated_spreadsheet)-1))
