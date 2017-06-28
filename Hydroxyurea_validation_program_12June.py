@@ -116,13 +116,18 @@ count = 1
 fail= 0
 for ndc in full_row_list[1:]:
 	test_ndc = ndc[NDC]
+	print("\nTest NDC #", count, test_ndc)
 	if len(test_ndc) <11 and len(test_ndc) >6:
 		test_ndc = test_ndc.rjust(11,'0')
-
-	print("\nTest NDC #", count, test_ndc)
-	result = initial_ndc_query(test_ndc, cache_fobj= cache_fobj)
-	search_results = json.loads(result)
-	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj= rxcui_cache_fobj)
+	if test_ndc in data:
+		rxcui = "Not in RxNorm, manual match"
+		drug_name = data[test_ndc]
+		status = "Not in RxNorm"
+		rxcui_results = (rxcui, drug_name, status)
+	else:
+		result = initial_ndc_query(test_ndc, cache_fobj= cache_fobj)
+		search_results = json.loads(result)
+		rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj= rxcui_cache_fobj)
 	
 ## getting rxcui and ndc variable into type integer for list comparison
 	try:
