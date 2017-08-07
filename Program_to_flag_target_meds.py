@@ -30,7 +30,6 @@ def find_active_rxcui(ndc_history_list):
 	except:
 		return "No Active Rxcui for this NDC"
 
-
 ## this function takes the ndc and checks if it is in the cache file, if not it makes an API call to get the ndc status from RxNorm
 ## after a new ndc is queried, the results are saved to a cache file.
 ## The function will return a text string containing the NDC status
@@ -66,7 +65,7 @@ def get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj):
 		# else:
 		print("*** Cannot locate Drug Name for this NDC. ***")
 		rxcui = str(test_ndc)
-		drug_name = "Unknown Drug"
+		drug_name = "Unknown Drug, No RXCUI"
 		return (rxcui, drug_name, status)		
 	else:
 		rxcui_list= search_results['ndcStatus']['ndcHistory']
@@ -81,7 +80,7 @@ def get_RXCUI_info(search_results, test_ndc, rxcui_cache_fobj):
 		try:
 			drug_name =RXCUI_properties['properties']['name']
 		except:
-			drug_name = "Unknown Drug"
+			drug_name = "Unknown Drug, RXCUI, but no name??"
 		print("*** ADDING Rxcui to cached file. ***")
 		rxcui_cache_fobj[rxcui] = drug_name
 	return (rxcui, drug_name, status)
@@ -108,7 +107,7 @@ with open(unkown_data_file) as json_file:
 
 #### Start of user interaction ####
 ## ask user for the name of the file with target ndc
-ndcfilename = input("Enter the name of the text file with the target NDCs ")
+ndcfilename = input("Enter the name of the text file with the target NDCs: ")
 try:
 	ndcfile = open(ndcfilename + '.txt', "r")
 	for ndc in ndcfile:
@@ -206,7 +205,7 @@ for ndc in full_row_list[1:]:
 ## Adding row results to final spreadsheet
 	updated_spreadsheet.append(ndc)
 	count +=1
-	if rxcui_results[1] == "Unknown Drug":
+	if rxcui_results[1] == "Unknown Drug, RXCUI, but no name??" or rxcui_results[1] == "Unknown Drug, No RXCUI":
 		fail +=1
 
 ## This step closes the two cache files to prevent corruption
