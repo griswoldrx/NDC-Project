@@ -159,6 +159,13 @@ try:
 except:
 	rxcui_saved_cache = {}
 
+unkown_data_file = "data.txt"
+
+## open and load the information from the text file into a python dictionary (JSON object) to be used for matching
+## 'unknown' or 'alien' NDC numbers
+with open(unkown_data_file) as json_file:
+	data = json.load(json_file)
+
 #Prompt user for filename
 fname = input("Enter the CSV file you want to perform NDC lookup on: ")
 try:
@@ -199,9 +206,15 @@ for ndc in full_row_list[1:]:
 		test_ndc = test_ndc.rjust(11,'0')
 
 	print("\nTest NDC #", count, test_ndc)
-	result = initial_ndc_query(test_ndc, cache_diction= saved_cache, cache_fname= cache_fname)
-	search_results = json.loads(result)
-	rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction= rxcui_saved_cache, rxcui_cache_fname= rxcui_cache_fname)
+	if test_ndc in data:
+		rxcui = "Not in RxNorm, manual match"
+		drug_name = data[test_ndc]
+		status = "Not in RxNorm"
+		rxcui_results = (rxcui, drug_name, status)
+	else:
+		result = initial_ndc_query(test_ndc, cache_diction= saved_cache, cache_fname= cache_fname)
+		search_results = json.loads(result)
+		rxcui_results = get_RXCUI_info(search_results, test_ndc, rxcui_cache_diction= rxcui_saved_cache, rxcui_cache_fname= rxcui_cache_fname)
 
 	ndc.append(rxcui_results[0])
 	ndc.append(rxcui_results[1])
@@ -215,6 +228,7 @@ for ndc in full_row_list[1:]:
 		ndc.append("Category 4")
 	else:
 		ndc.append("None")
+
 	updated_spreadsheet.append(ndc)
 	count +=1
 	if rxcui_results[1] == "Unknown Drug":
@@ -225,6 +239,10 @@ print("\n\nLength of updated spreadsheet: ", (len(updated_spreadsheet)-1))
 print("NDC numbers without drug information found: ", fail)
 print("Percent of NDC matching = ", match_rate)	
 
+print("PCN", len(PCN_rxcui_list))
+print("Amox", len(Amox_rxcui_list))
+print("Ery", len(Ery_rxcui_list))
+print("Cat 4", len(Other_oral_abx_rxcui_list))
 # ## Generate a new CSV file with all original data plus 
 # ## 3 new columns specifying RXCUI, Drug Name and which category of antibiotic
 spreadsheet_filename = fname + 'results.csv'
